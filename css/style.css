@@ -1,0 +1,154 @@
+:root{
+--primary:#2563eb;
+--border:#999;
+}
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+-webkit-print-color-adjust:exact;
+print-color-adjust:exact;
+}
+
+body{
+font-family: system-ui, -apple-system, "Noto Sans JP", sans-serif;
+background:#fff;
+padding:40px;
+}
+
+.container{
+display:grid;
+grid-template-columns:300px auto;
+gap:40px;
+}
+
+.controls{
+background:#fff;
+padding:20px;
+border-radius:10px;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
+display:flex;
+flex-direction:column;
+gap:10px;
+max-height:90vh;
+overflow:auto;
+}
+
+.controls input,
+.controls textarea{
+padding:6px;
+border:1px solid var(--border);
+border-radius:6px;
+}
+
+.controls button{
+padding:10px;
+border:none;
+background:var(--primary);
+color:white;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.preview{
+background:#fff;
+padding:30px;
+border-radius:10px;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
+overflow:auto;
+}
+
+#printSheet{
+display:grid;
+gap:4mm;
+}
+
+.card{
+width:53mm;
+height:96mm;
+display:grid;
+grid-template-rows:66mm 22mm 8mm;
+border:1.5px solid var(--border);
+}
+
+.photo{
+display:flex;
+align-items:center;
+justify-content:center;
+border-bottom:1.5px solid var(--border);
+}
+
+.photo img{
+width:100%;
+height:100%;
+object-fit:contain;
+}
+
+.middle{
+display:flex;
+align-items:center;
+gap:6px;
+padding:4px;
+border-bottom:1.5px solid var(--border);
+}
+
+.number{
+width:20mm;
+height:20mm;
+background:var(--primary);
+color:white;
+font-size:56px;
+font-weight:700;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:4px;
+}
+
+.name{
+font-size:15px;
+font-weight:700;
+white-space:pre-line;
+}
+
+.footer{
+font-weight:bold;
+text-align:center;
+font-size:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.tabs{
+display:flex;
+gap:6px;
+flex-wrap:wrap;
+margin-bottom:10px;
+}
+
+.tabs button{
+padding:6px 10px;
+border:none;
+background:#ddd;
+border-radius:6px;
+cursor:pointer;
+}
+
+.tabs button.active{
+background:var(--primary);
+color:white;
+}
+
+@page{
+size:A4 landscape;
+margin:0;
+}
+
+@media print{
+body *{visibility:hidden;}
+#printSheet,#printSheet *{visibility:visible;}
+#printSheet{position:absolute;top:10mm;left:10mm;}
+}
