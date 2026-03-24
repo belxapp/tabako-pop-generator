@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>タバコPOP生成ツール</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <h1>タバコPOP生成ツール</h1>
+
+    <div class="container">
+
+        <div class="controls">
+
+            <h2>シート設定</h2>
+
+            <label>横（列）</label>
+            <input id="cols" type="number" value="5">
+
+            <label>縦（行）</label>
+            <input id="rows" type="number" value="2">
+
+            <hr>
+
+            <h2>カード設定</h2>
+
+            <div id="cardList"></div>
+
+            <hr>
+
+            <button onclick="renderSheet()">更新</button>
+            <button onclick="printPOP()">印刷</button>
+
+        </div>
+
+        <div class="preview">
+            <div id="printSheet"></div>
+        </div>
+
+    </div>
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>
