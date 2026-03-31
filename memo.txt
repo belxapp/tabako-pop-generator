@@ -1,0 +1,434 @@
+iphone-cropper-demo/
+├─ index.html
+├─ style.css
+└─ app.js
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <title>iPhone風 手動切り取りデモ</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <button id="cancelBtn" class="circleBtn" title="リセット">✕</button>
+
+      <div class="cluster">
+        <div class="pill">
+          <button id="aspectBtn" title="縦横比">⇄</button>
+          <button id="rotate90Btn" title="90°回転">↻</button>
+        </div>
+        <div class="pill">
+          <button id="mirrorBtn" title="左右反転">◫</button>
+          <button id="moreBtn" title="読み込み">…</button>
+        </div>
+      </div>
+
+      <button id="applyBtn" class="circleBtn confirm" title="切り取りを書き出す">✓</button>
+    </div>
+
+    <div id="stageWrap" class="stageWrap">
+      <canvas id="stage"></canvas>
+      <input id="fileInput" class="fileInput" type="file" accept="image/*" />
+    </div>
+
+    <div class="controlsRow">
+      <div>
+        <button id="moveModeBtn" class="toolBtn active" title="画像移動・ズーム">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="24" cy="24" r="11" />
+            <path d="M24 4v8M24 36v8M4 24h8M36 24h8" />
+          </svg>
+        </button>
+        <div class="toolLabel">移動</div>
+      </div>
+
+      <div>
+        <button id="cropModeBtn" class="toolBtn" title="切り取り枠編集">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 8v24a4 4 0 0 0 4 4h22" />
+            <path d="M34 40V16a4 4 0 0 0-4-4H8" />
+          </svg>
+        </button>
+        <div class="toolLabel">枠調整</div>
+      </div>
+
+      <div>
+        <button id="straightenModeBtn" class="toolBtn" title="傾き補正">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 24h32" />
+            <path d="M16 16l24 8-24 8z" />
+          </svg>
+        </button>
+        <div class="toolLabel">傾き</div>
+      </div>
+    </div>
+
+    <div class="sliderWrap">
+      <input id="straightenSlider" type="range" min="-45" max="45" step="0.1" value="0" />
+    </div>
+
+    <div class="tabbar">
+      <button id="tabAdjust">調整</button>
+      <button id="tabFilter">フィルタ</button>
+      <button id="tabCrop" class="active">切り取り</button>
+    </div>
+
+    <div class="footer">
+      <button id="loadBtn" class="miniBtn">写真を読み込む</button>
+
+      <div class="seg" id="ratioSeg">
+        <button data-ratio="free" class="active">自由</button>
+        <button data-ratio="1">1:1</button>
+        <button data-ratio="1.3333333333">4:3</button>
+        <button data-ratio="1.7777777778">16:9</button>
+      </div>
+
+      <button id="downloadBtn" class="primaryBtn">PNGを書き出す</button>
+    </div>
+
+    <div class="hint">
+      1本指/マウスで画像移動、ホイールまたはピンチでズーム。<br />
+      「枠調整」で切り取り枠を移動・リサイズ、「傾き」で微回転。右上の✓でも書き出せます。
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
+
+:root{
+  --bg: #efefef;
+  --panel: rgba(255,255,255,.82);
+  --panel-strong: rgba(255,255,255,.92);
+  --text: #111;
+  --muted: #7d7d7d;
+  --line: rgba(0,0,0,.10);
+  --shadow: 0 12px 36px rgba(0,0,0,.12);
+  --accent: #f0c400;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  height:100%;
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  background:linear-gradient(180deg,#f7f7f7,#ececec);
+  color:var(--text);
+}
+
+body{
+  overflow:hidden;
+}
+
+.app{
+  height:100dvh;
+  display:grid;
+  grid-template-rows:auto 1fr auto auto auto;
+  gap:12px;
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+  max-width:900px;
+  margin:0 auto;
+}
+
+.topbar{
+  display:grid;
+  grid-template-columns:78px 1fr 78px;
+  align-items:center;
+  gap:12px;
+}
+
+.cluster{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.pill,.circleBtn,.tabbar{
+  background:var(--panel);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+}
+
+.circleBtn{
+  width:68px;
+  height:68px;
+  border-radius:999px;
+  border:none;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  font-size:28px;
+  font-weight:300;
+  color:#111;
+}
+
+.circleBtn:active,
+.miniBtn:active,
+.pill button:active,
+.seg button:active,
+.primaryBtn:active{
+  transform:scale(.98);
+}
+
+.circleBtn.confirm{
+  color:#9b9b9b;
+}
+
+.pill{
+  border-radius:999px;
+  padding:8px;
+  display:inline-flex;
+  gap:6px;
+  align-items:center;
+  justify-content:center;
+}
+
+.pill button,
+.miniBtn,
+.seg button,
+.primaryBtn{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  border-radius:999px;
+  color:#111;
+  font:inherit;
+}
+
+.pill button{
+  width:58px;
+  height:52px;
+  font-size:24px;
+  display:grid;
+  place-items:center;
+}
+
+.stageWrap{
+  position:relative;
+  min-height:320px;
+  border-radius:30px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,226,130,.55), transparent 20%),
+    radial-gradient(circle at 75% 75%, rgba(255,165,180,.45), transparent 20%),
+    radial-gradient(circle at 40% 78%, rgba(130,230,210,.35), transparent 18%),
+    linear-gradient(180deg,#f2f2f2,#e9e9e9);
+}
+
+canvas#stage{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  touch-action:none;
+  cursor:grab;
+}
+
+canvas#stage.dragging{
+  cursor:grabbing;
+}
+
+.controlsRow{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  align-items:center;
+}
+
+.toolBtn{
+  width:82px;
+  height:82px;
+  border-radius:999px;
+  border:1px solid rgba(0,0,0,.18);
+  background:rgba(255,255,255,.60);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:var(--shadow);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+
+.toolBtn svg{
+  width:42px;
+  height:42px;
+}
+
+.toolBtn.active{
+  outline:3px solid rgba(240,196,0,.55);
+}
+
+.toolLabel{
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  margin-top:6px;
+}
+
+.sliderWrap{
+  padding:0 10px;
+}
+
+input[type="range"]{
+  width:100%;
+  appearance:none;
+  background:transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track{
+  height:24px;
+  border-radius:999px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 12px,
+      #8e8e8e 12px 15px
+    ),
+    linear-gradient(180deg,transparent 0 0);
+}
+
+input[type="range"]::-moz-range-track{
+  height:24px;
+  border:none;
+  border-radius:999px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 12px,
+      #8e8e8e 12px 15px
+    );
+}
+
+input[type="range"]::-webkit-slider-thumb{
+  appearance:none;
+  width:4px;
+  height:32px;
+  background:var(--accent);
+  border-radius:4px;
+  margin-top:-4px;
+  border:none;
+  box-shadow:0 0 0 2px rgba(255,255,255,.9);
+}
+
+input[type="range"]::-moz-range-thumb{
+  width:4px;
+  height:32px;
+  background:var(--accent);
+  border:none;
+  border-radius:4px;
+  box-shadow:0 0 0 2px rgba(255,255,255,.9);
+}
+
+.tabbar{
+  justify-self:center;
+  border-radius:999px;
+  padding:8px;
+  display:flex;
+  gap:4px;
+  align-items:center;
+  justify-content:center;
+  width:min(92%, 520px);
+}
+
+.tabbar button{
+  flex:1;
+  border:none;
+  background:transparent;
+  border-radius:999px;
+  padding:14px 8px;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:#5a5a5a;
+  cursor:pointer;
+}
+
+.tabbar button.active{
+  color:#111;
+  font-weight:600;
+}
+
+.footer{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.miniBtn,
+.primaryBtn,
+.seg button{
+  padding:10px 16px;
+  background:var(--panel-strong);
+  box-shadow:var(--shadow);
+}
+
+.primaryBtn{
+  font-weight:700;
+}
+
+.seg{
+  display:inline-flex;
+  background:var(--panel);
+  padding:6px;
+  border-radius:999px;
+  gap:4px;
+  box-shadow:var(--shadow);
+}
+
+.seg button.active{
+  background:white;
+}
+
+.hint{
+  text-align:center;
+  color:#6f6f6f;
+  font-size:13px;
+  line-height:1.45;
+  padding:0 16px;
+}
+
+.fileInput{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+  width:1px;
+  height:1px;
+}
+
+@media (max-width: 640px){
+  .circleBtn{
+    width:62px;
+    height:62px;
+  }
+
+  .toolBtn{
+    width:74px;
+    height:74px;
+  }
+
+  .topbar{
+    grid-template-columns:68px 1fr 68px;
+  }
+
+  .app{
+    gap:10px;
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+}
+
